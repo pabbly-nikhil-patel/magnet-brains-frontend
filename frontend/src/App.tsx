@@ -56,12 +56,9 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-            {/* Category Browsing: Board > Class > Stream > Subject */}
+            {/* Category Browsing: supports unlimited depth */}
             <Route path="/browse" element={<CategoryBrowsePage />} />
-            <Route path="/browse/:boardSlug" element={<CategoryBrowsePage />} />
-            <Route path="/browse/:boardSlug/:classSlug" element={<CategoryBrowsePage />} />
-            <Route path="/browse/:boardSlug/:classSlug/:streamSlug" element={<CategoryBrowsePage />} />
-            <Route path="/browse/:boardSlug/:classSlug/:streamSlug/:subjectSlug" element={<CategoryBrowsePage />} />
+            <Route path="/browse/*" element={<CategoryBrowsePage />} />
 
             {/* Student */}
             <Route path="/dashboard" element={<ProtectedRoute roles={['student']}><StudentDashboard /></ProtectedRoute>} />

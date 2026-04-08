@@ -86,10 +86,13 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  type: 'board' | 'class' | 'stream' | 'subject';
+  type: 'board' | 'class' | 'stream' | 'subject' | 'domain' | 'topic' | 'subtopic';
   parent_id?: string;
   sort_order: number;
   icon_url?: string;
+  description?: string;
+  image_url?: string;
+  course_count?: number;
   is_active: boolean;
 }
 

@@ -7,107 +7,82 @@ import LoadingSpinner from '../../components/shared/LoadingSpinner';
 import type { Category, CourseListItem } from '../../types';
 
 export default function CategoryBrowsePage() {
-  const { boardSlug, classSlug, streamSlug, subjectSlug } = useParams();
+  const params = useParams<{ '*': string }>();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+
+  // Parse the URL path segments
+  const pathSegments = (params['*'] || '').split('/').filter(Boolean);
+  const currentSlug = pathSegments[pathSegments.length - 1] || '';
 
   useEffect(() => {
     setLoading(true);
     coursesApi.getCategories().then((res) => {
-      const cats = res.data;
-      setCategories(cats);
+      setCategories(res.data);
 
-      // Determine what level we're at and what to show
-      if (subjectSlug) {
-        // Show courses for this subject
-        const subject = cats.find(c => c.slug === subjectSlug);
-        setCurrentCategory(subject || null);
-        coursesApi.getCategoryCourses(subjectSlug).then(r => setCourses(r.data.data));
-      } else if (streamSlug) {
-        // Show subjects under this stream (or courses if no subjects)
-        const stream = cats.find(c => c.slug === streamSlug);
-        setCurrentCategory(stream || null);
-        // Also load courses for this stream
-        coursesApi.getCategoryCourses(streamSlug).then(r => setCourses(r.data.data));
-      } else if (classSlug) {
-        const cls = cats.find(c => c.slug === classSlug);
-        setCurrentCategory(cls || null);
-        coursesApi.getCategoryCourses(classSlug).then(r => setCourses(r.data.data));
-      } else if (boardSlug) {
-        const board = cats.find(c => c.slug === boardSlug);
-        setCurrentCategory(board || null);
-        coursesApi.getCategoryCourses(boardSlug).then(r => setCourses(r.data.data));
+      // If we have a current slug, try to load courses for it
+      if (currentSlug) {
+        coursesApi.getCategoryCourses(currentSlug).then(r => setCourses(r.data.data)).catch(() => setCourses([]));
+      } else {
+        setCourses([]);
       }
     }).finally(() => setLoading(false));
-  }, [boardSlug, classSlug, streamSlug, subjectSlug]);
+  }, [currentSlug]);
 
-  // Get children of current level
+  // Find current category
+  const currentCategory = currentSlug ? categories.find(c => c.slug === currentSlug) : null;
+
+  // Get children of current category (or top-level domains if no slug)
   const getChildren = () => {
-    if (subjectSlug) return []; // Leaf level — show courses
-    if (streamSlug) {
-      const stream = categories.find(c => c.slug === streamSlug);
-      return categories.filter(c => c.type === 'subject' && c.parent_id === stream?.id);
+    if (!currentSlug) {
+      return categories.filter(c => c.type === 'domain');
     }
-    if (classSlug) {
-      const cls = categories.find(c => c.slug === classSlug);
-      return categories.filter(c => c.type === 'stream' && c.parent_id === cls?.id);
+    if (currentCategory) {
+      return categories
+        .filter(c => c.parent_id === currentCategory.id)
+        .sort((a, b) => a.sort_order - b.sort_order);
     }
-    if (boardSlug) {
-      const board = categories.find(c => c.slug === boardSlug);
-      return categories.filter(c => c.type === 'class' && c.parent_id === board?.id);
-    }
-    return categories.filter(c => c.type === 'board');
+    return [];
   };
 
   const children = getChildren();
 
-  // Build breadcrumb
-  const breadcrumbs: { label: string; path: string }[] = [
-    { label: 'Home', path: '/' },
-    { label: 'Browse', path: '/browse' },
-  ];
-  if (boardSlug) {
-    const board = categories.find(c => c.slug === boardSlug);
-    breadcrumbs.push({ label: board?.name || boardSlug, path: `/browse/${boardSlug}` });
-  }
-  if (classSlug) {
-    const cls = categories.find(c => c.slug === classSlug);
-    breadcrumbs.push({ label: cls?.name || classSlug, path: `/browse/${boardSlug}/${classSlug}` });
-  }
-  if (streamSlug) {
-    const stream = categories.find(c => c.slug === streamSlug);
-    breadcrumbs.push({ label: stream?.name || streamSlug, path: `/browse/${boardSlug}/${classSlug}/${streamSlug}` });
-  }
-  if (subjectSlug) {
-    const subject = categories.find(c => c.slug === subjectSlug);
-    breadcrumbs.push({ label: subject?.name || subjectSlug, path: `/browse/${boardSlug}/${classSlug}/${streamSlug}/${subjectSlug}` });
-  }
+  // Build breadcrumbs by walking up the parent chain
+  const buildBreadcrumbs = () => {
+    const crumbs: { label: string; path: string }[] = [
+      { label: 'Home', path: '/' },
+      { label: 'Browse', path: '/browse' },
+    ];
 
-  // Build child link path
+    if (pathSegments.length > 0) {
+      let path = '/browse';
+      for (const seg of pathSegments) {
+        const cat = categories.find(c => c.slug === seg);
+        path += `/${seg}`;
+        crumbs.push({ label: cat?.name || seg, path });
+      }
+    }
+
+    return crumbs;
+  };
+
+  const breadcrumbs = buildBreadcrumbs();
+
+  // Build path for a child category
   const getChildPath = (child: Category) => {
-    if (!boardSlug) return `/browse/${child.slug}`;
-    if (!classSlug) return `/browse/${boardSlug}/${child.slug}`;
-    if (!streamSlug) return `/browse/${boardSlug}/${classSlug}/${child.slug}`;
-    return `/browse/${boardSlug}/${classSlug}/${streamSlug}/${child.slug}`;
+    const basePath = pathSegments.length > 0 ? `/browse/${pathSegments.join('/')}` : '/browse';
+    return `${basePath}/${child.slug}`;
   };
 
-  const getLevelLabel = () => {
-    if (subjectSlug) return 'Courses';
-    if (streamSlug) return 'Select Subject';
-    if (classSlug) return 'Select Stream';
-    if (boardSlug) return 'Select Class';
-    return 'Select Board';
-  };
-
-  const getLevelIcon = (type: string) => {
+  const getCategoryEmoji = (type: string) => {
     switch (type) {
-      case 'board': return '🏫';
-      case 'class': return '📚';
+      case 'domain': return '📂';
+      case 'topic': case 'board': return '📚';
+      case 'subtopic': case 'class': return '📖';
       case 'stream': return '🔬';
-      case 'subject': return '📖';
+      case 'subject': return '📝';
       default: return '📁';
     }
   };
@@ -117,7 +92,7 @@ export default function CategoryBrowsePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6 flex-wrap">
         {breadcrumbs.map((bc, i) => (
           <span key={bc.path} className="flex items-center gap-2">
             {i > 0 && <ChevronRight className="w-3 h-3" />}
@@ -131,48 +106,60 @@ export default function CategoryBrowsePage() {
       </nav>
 
       {/* Back button */}
-      {boardSlug && (
+      {pathSegments.length > 0 && (
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
       )}
 
-      {/* Current level header */}
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          {currentCategory?.name || 'Browse Courses'}
+        <h1 className="text-3xl font-bold mb-1">
+          {currentCategory?.name || 'Browse All Categories'}
         </h1>
-        <p className="text-gray-500">{getLevelLabel()}</p>
+        {currentCategory?.description && (
+          <p className="text-gray-500">{currentCategory.description}</p>
+        )}
+        {!currentCategory && (
+          <p className="text-gray-500">Explore courses across academics, government exams, competitive exams, and skills</p>
+        )}
       </div>
 
-      {/* Category cards (if not at leaf level) */}
+      {/* Category cards */}
       {children.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
-          {children.map((child) => (
-            <Link
-              key={child.id}
-              to={getChildPath(child)}
-              className="card p-6 hover:shadow-md transition-all hover:border-primary group"
-            >
-              <div className="text-3xl mb-3">{getLevelIcon(child.type)}</div>
-              <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                {child.name}
-              </h3>
-              <div className="flex items-center gap-1 text-sm text-gray-400 mt-2">
-                <span>Explore</span>
-                <ChevronRight className="w-4 h-4" />
-              </div>
-            </Link>
-          ))}
+          {children.map((child) => {
+            const grandchildren = categories.filter(c => c.parent_id === child.id);
+            return (
+              <Link
+                key={child.id}
+                to={getChildPath(child)}
+                className="card p-5 hover:shadow-md transition-all hover:border-primary/30 group"
+              >
+                <div className="text-2xl mb-2">{getCategoryEmoji(child.type)}</div>
+                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors mb-1">
+                  {child.name}
+                </h3>
+                {child.description && (
+                  <p className="text-xs text-gray-500 mb-2 line-clamp-2">{child.description}</p>
+                )}
+                {grandchildren.length > 0 && (
+                  <p className="text-xs text-gray-400">{grandchildren.length} subcategories</p>
+                )}
+                <div className="flex items-center gap-1 text-sm text-primary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>Explore</span>
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
 
-      {/* Courses grid (shown at stream/subject level or when no children) */}
-      {(children.length === 0 || streamSlug || subjectSlug) && courses.length > 0 && (
+      {/* Courses */}
+      {courses.length > 0 && (
         <div>
-          {children.length > 0 && (
-            <h2 className="text-xl font-bold mb-4 mt-6">Courses</h2>
-          )}
+          {children.length > 0 && <h2 className="text-xl font-bold mb-4">Courses</h2>}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {courses.map((course) => (
               <CourseCard key={course.id} course={course} />
@@ -181,12 +168,13 @@ export default function CategoryBrowsePage() {
         </div>
       )}
 
-      {/* No courses message */}
+      {/* Empty state */}
       {children.length === 0 && courses.length === 0 && (
         <div className="text-center py-16">
           <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">No courses available in this category yet.</p>
-          <Link to="/browse" className="btn-primary mt-4 inline-block">Browse All Categories</Link>
+          <p className="text-gray-500 text-lg mb-2">No courses available in this category yet.</p>
+          <p className="text-gray-400 text-sm mb-4">Courses will appear here once instructors publish them.</p>
+          <Link to="/browse" className="btn-primary inline-block">Browse All Categories</Link>
         </div>
       )}
     </div>

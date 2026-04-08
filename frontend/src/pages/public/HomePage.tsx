@@ -2,12 +2,39 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen, PlayCircle, Award, Users, MessageCircle, Video,
-  ChevronRight, ChevronLeft, GraduationCap, FileText, Download, Star
+  ChevronRight, ChevronLeft, GraduationCap, FileText, Star,
+  Briefcase, Code, TrendingUp, Shield, Landmark, Train, PenTool
 } from 'lucide-react';
 import { coursesApi } from '../../api/courses';
 import { useCourseStore } from '../../stores/courseStore';
 import CourseCard from '../../components/shared/CourseCard';
 import type { CourseListItem, Category } from '../../types';
+
+// Domain icons mapping
+const domainIcons: Record<string, React.ReactNode> = {
+  'academic': <GraduationCap className="w-6 h-6" />,
+  'govt-exams': <Landmark className="w-6 h-6" />,
+  'competitive-exams': <Award className="w-6 h-6" />,
+  'skill-development': <Code className="w-6 h-6" />,
+};
+
+const topicIcons: Record<string, React.ReactNode> = {
+  'banking-insurance': <Briefcase className="w-5 h-5" />,
+  'railways': <Train className="w-5 h-5" />,
+  'ssc': <Shield className="w-5 h-5" />,
+  'upsc': <Landmark className="w-5 h-5" />,
+  'state-psc': <Landmark className="w-5 h-5" />,
+  'defence': <Shield className="w-5 h-5" />,
+  'teaching-exams': <PenTool className="w-5 h-5" />,
+  'jee': <TrendingUp className="w-5 h-5" />,
+  'neet': <TrendingUp className="w-5 h-5" />,
+  'cuet': <BookOpen className="w-5 h-5" />,
+  'ca-foundation': <Briefcase className="w-5 h-5" />,
+  'computer-science': <Code className="w-5 h-5" />,
+  'digital-marketing': <TrendingUp className="w-5 h-5" />,
+  'english-speaking': <MessageCircle className="w-5 h-5" />,
+  'tally-accounting': <Briefcase className="w-5 h-5" />,
+};
 
 export default function HomePage() {
   const [courses, setCourses] = useState<CourseListItem[]>([]);
@@ -28,9 +55,12 @@ export default function HomePage() {
     }).finally(() => setLoading(false));
   }, []);
 
+  const domains = categories.filter((c) => c.type === 'domain');
   const boards = categories.filter((c) => c.type === 'board');
 
-  // Build tabs from course tags/subjects
+  const getChildren = (parentId: string) =>
+    categories.filter((c) => c.parent_id === parentId).sort((a, b) => a.sort_order - b.sort_order);
+
   const tabs = [
     { id: 'all', label: 'All Courses' },
     { id: 'physics', label: 'Physics' },
@@ -54,9 +84,8 @@ export default function HomePage() {
 
   const scrollCourses = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 320;
       scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        left: direction === 'left' ? -320 : 320,
         behavior: 'smooth',
       });
     }
@@ -84,22 +113,20 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 py-12 md:py-20">
           <div className="flex flex-col md:flex-row items-center gap-10">
-            {/* Left content */}
             <div className="flex-1">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
                 Learn Smarter with<br />
                 <span className="text-primary">Free Online Education</span>
               </h1>
               <p className="text-gray-300 text-lg mb-6 max-w-lg">
-                High-quality video lectures for all classes and boards. Start learning today from India's best teachers.
+                From board exams to government jobs to skill development — learn from India's best teachers, absolutely free.
               </p>
-
               <div className="grid grid-cols-2 gap-3 mb-8 max-w-md">
                 {[
                   { icon: <GraduationCap className="w-5 h-5" />, text: 'CBSE, MP, UP & Bihar Board' },
-                  { icon: <PlayCircle className="w-5 h-5" />, text: 'Full Chapter Videos' },
-                  { icon: <Award className="w-5 h-5" />, text: 'Complete Syllabus Coverage' },
-                  { icon: <Download className="w-5 h-5" />, text: 'Free E-Notes & Papers' },
+                  { icon: <Landmark className="w-5 h-5" />, text: 'SSC, Banking, Railways' },
+                  { icon: <Award className="w-5 h-5" />, text: 'JEE, NEET, CUET Prep' },
+                  { icon: <Code className="w-5 h-5" />, text: 'Coding & Digital Skills' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
                     <span className="text-primary">{item.icon}</span>
@@ -107,7 +134,6 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-
               <div className="flex items-center gap-4">
                 <Link to="/courses" className="bg-primary text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-colors">
                   Explore Courses
@@ -117,8 +143,6 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-
-            {/* Right - Stats cards */}
             <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
               {stats.map((stat, i) => (
                 <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-5 text-center min-w-[140px]">
@@ -131,39 +155,82 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Board Navigation Pills */}
+      {/* Domain Categories - Professional Grid */}
+      {domains.length > 0 && (
+        <section className="bg-white border-b py-10">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-6">What do you want to learn?</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {domains.map((domain) => {
+                const children = getChildren(domain.id);
+                return (
+                  <div key={domain.id} className="card p-5 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
+                        {domainIcons[domain.slug] || <BookOpen className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <h3 className="font-bold">{domain.name}</h3>
+                        {domain.description && (
+                          <p className="text-xs text-gray-500">{domain.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 mb-3">
+                      {children.slice(0, 5).map((child) => (
+                        <Link
+                          key={child.id}
+                          to={`/browse/${domain.slug}/${child.slug}`}
+                          className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors py-0.5"
+                        >
+                          {topicIcons[child.slug] || <ChevronRight className="w-4 h-4" />}
+                          <span>{child.name}</span>
+                        </Link>
+                      ))}
+                      {children.length > 5 && (
+                        <p className="text-xs text-gray-400 pl-7">+{children.length - 5} more</p>
+                      )}
+                    </div>
+                    <Link
+                      to={`/browse/${domain.slug}`}
+                      className="text-primary text-sm font-medium hover:underline flex items-center gap-1"
+                    >
+                      Explore all <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Academic Boards - Quick Access */}
       {boards.length > 0 && (
-        <section className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex flex-wrap gap-3 justify-center">
+        <section className="py-8">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-xl font-bold mb-4">Academic Boards</h2>
+            <div className="flex flex-wrap gap-3">
               {boards.map((board) => (
                 <Link
                   key={board.id}
-                  to={`/browse/${board.slug}`}
-                  className="px-5 py-2 bg-gray-50 rounded-full border hover:border-primary hover:text-primary hover:bg-primary/5 transition-all text-sm font-medium"
+                  to={`/browse/academic/${board.slug}`}
+                  className="px-5 py-2.5 bg-white rounded-lg border hover:border-primary hover:text-primary hover:bg-primary/5 transition-all text-sm font-medium shadow-sm"
                 >
                   {board.name}
                 </Link>
               ))}
-              <Link
-                to="/browse"
-                className="px-5 py-2 bg-primary/10 text-primary rounded-full border border-primary/20 hover:bg-primary/20 transition-all text-sm font-medium"
-              >
-                Browse All &rarr;
-              </Link>
             </div>
           </div>
         </section>
       )}
 
       {/* Tabbed Course Section */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
+      <section className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold mb-2">Explore Top Courses</h2>
-          <p className="text-gray-500">From CBSE to state boards, find the perfect course for you</p>
+          <h2 className="text-3xl font-bold mb-2">Popular Courses</h2>
+          <p className="text-gray-500">Handpicked courses across all categories</p>
         </div>
-
-        {/* Tabs */}
         <div className="flex items-center gap-1 border-b mb-6 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -179,13 +246,10 @@ export default function HomePage() {
             </button>
           ))}
         </div>
-
-        {/* Horizontal Scrollable Course Cards */}
         {loading ? (
           <p className="text-center text-gray-500 py-12">Loading courses...</p>
         ) : (
           <div className="relative group">
-            {/* Scroll buttons */}
             <button
               onClick={() => scrollCourses('left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 bg-white shadow-lg rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
@@ -198,12 +262,9 @@ export default function HomePage() {
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-
-            {/* Cards */}
             <div
               ref={scrollRef}
               className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {filteredCourses.map((course) => (
                 <div key={course.id} className="flex-shrink-0 w-72">
@@ -213,12 +274,48 @@ export default function HomePage() {
             </div>
           </div>
         )}
-
-        {/* Show all link */}
         <div className="mt-6">
           <Link to="/courses" className="text-primary font-medium text-sm hover:underline flex items-center gap-1">
-            Show all {activeTab === 'all' ? '' : activeTab} courses <ChevronRight className="w-4 h-4" />
+            Show all courses <ChevronRight className="w-4 h-4" />
           </Link>
+        </div>
+      </section>
+
+      {/* Government Exams Highlight */}
+      <section className="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Government Exam Preparation</h2>
+              <p className="text-blue-200 mb-4">Complete preparation for Banking, SSC, Railways, UPSC and more</p>
+              <div className="flex flex-wrap gap-3">
+                {['Banking & Insurance', 'SSC', 'Railways', 'UPSC', 'Defence'].map((exam) => (
+                  <span key={exam} className="bg-white/10 px-4 py-1.5 rounded-full text-sm">{exam}</span>
+                ))}
+              </div>
+            </div>
+            <Link to="/browse/govt-exams" className="bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap">
+              Explore Govt Exams
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Become an Instructor CTA */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-gradient-to-r from-primary/10 to-lime-50 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Become an Instructor</h2>
+              <p className="text-gray-600 max-w-xl">
+                Share your knowledge with lakhs of students. Create courses, upload videos, and earn money.
+                Join our growing community of 50+ expert teachers.
+              </p>
+            </div>
+            <Link to="/register" className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap">
+              Start Teaching Today
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -245,14 +342,45 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonial / Trust Section */}
+      {/* Student Testimonials */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-2">See what others are achieving through learning</h2>
+          <p className="text-gray-500 mb-8">Real stories from our students</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { quote: 'The physics lectures are incredibly clear. I scored 95% in my board exams thanks to the detailed explanations.', name: 'Ananya M', initials: 'AM', course: 'Class 12 Physics', slug: 'complete-physics-class-12' },
+              { quote: 'Best free education platform! The chemistry course covers every NCERT topic. Helped me crack my entrance exam.', name: 'Rohit K', initials: 'RK', course: 'Class 12 Chemistry', slug: 'chemistry-full-course-class-12' },
+              { quote: 'The step-by-step approach in mathematics made everything click. Calculus finally makes sense!', name: 'Priya S', initials: 'PS', course: 'Class 12 Mathematics', slug: 'mathematics-premium-class-12' },
+              { quote: 'Biology lectures with diagrams and NCERT alignment are perfect for NEET preparation. Scored 650+!', name: 'Vikash T', initials: 'VT', course: 'Class 12 Biology', slug: 'biology-complete-class-12' },
+            ].map((t, i) => (
+              <div key={i} className="card p-6 flex flex-col justify-between">
+                <div>
+                  <span className="text-4xl text-black-200 leading-none">&ldquo;</span>
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">{t.quote}</p>
+                </div>
+                <div className="mt-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gray-800 text-white rounded-full flex items-center justify-center text-sm font-bold">{t.initials}</div>
+                    <span className="text-sm font-medium">{t.name}</span>
+                  </div>
+                  <Link to={`/courses/${t.slug}`} className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
+                    {t.course} course <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Section */}
       <section className="py-14">
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 md:p-12 text-white text-center">
             <h2 className="text-3xl font-bold mb-4">Trusted by Lakhs of Students</h2>
             <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
               Join millions of students who are already learning from India's best teachers.
-              Start your journey today — completely free.
             </p>
             <div className="flex items-center justify-center gap-1 mb-6">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -261,7 +389,7 @@ export default function HomePage() {
               <span className="text-lg font-medium ml-2">4.8 / 5</span>
               <span className="text-gray-400 ml-1">(based on student reviews)</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-wrap justify-center gap-8 mb-8">
               {stats.map((stat, i) => (
                 <div key={i}>
                   <p className="text-3xl font-bold text-primary">{stat.value}</p>
@@ -269,7 +397,7 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            <Link to="/register" className="inline-block mt-8 bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors">
+            <Link to="/register" className="inline-block bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors">
               Start Learning for Free
             </Link>
           </div>
