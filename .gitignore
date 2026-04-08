@@ -1,0 +1,23 @@
+# Rust
+backend/target/
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/dist/
+
+# Keys
+backend/keys/
+
+# Images (documentation screenshots)
+Images/
+
+# Placeholder lock file
+backend/Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
