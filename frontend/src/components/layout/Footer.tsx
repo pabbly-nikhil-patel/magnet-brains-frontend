@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen } from 'lucide-react';
+
 
 export default function Footer() {
   return (
@@ -8,9 +8,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="w-6 h-6 text-primary" />
-              <span className="text-lg font-bold text-white">Magnet Brains</span>
+            <div className="mb-4">
+              <img src="/brand/MB-Logo-Light.webp" alt="Magnet Brains" className="h-10" />
             </div>
             <p className="text-sm text-gray-400">
               India's leading free online education platform. High-quality video lectures for all classes and boards.

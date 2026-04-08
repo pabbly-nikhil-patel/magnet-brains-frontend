@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authApi } from '../../api/auth';
 import { useAuthStore } from '../../stores/authStore';
+import PasswordInput from '../../components/shared/PasswordInput';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -41,8 +42,7 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              className="input-field" required />
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <div className="text-right">
             <Link to="/forgot-password" className="text-sm text-primary hover:underline">Forgot password?</Link>

@@ -74,7 +74,7 @@ export default function CourseDetailPage() {
           } catch { toast.error('Payment verification failed'); }
         },
         prefill: { email: user?.email, name: user?.full_name },
-        theme: { color: '#f97316' },
+        theme: { color: '#94C635' },
       };
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -199,7 +199,7 @@ export default function CourseDetailPage() {
                     <button
                       onClick={() => toggleChapter(chapter.id)}
                       className={`w-full flex items-center justify-between p-4 text-left transition-colors ${
-                        isExpanded ? 'bg-orange-50 border-b' : 'hover:bg-gray-50'
+                        isExpanded ? 'bg-lime-50 border-b' : 'hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -222,7 +222,7 @@ export default function CourseDetailPage() {
                                 <button
                                   key="show-more"
                                   onClick={() => setExpandedChapters(prev => new Set([...prev, chapter.id + '_all']))}
-                                  className="w-full py-3 text-center text-sm text-primary font-medium bg-orange-50 hover:bg-orange-100 transition-colors"
+                                  className="w-full py-3 text-center text-sm text-primary font-medium bg-lime-50 hover:bg-lime-100 transition-colors"
                                 >
                                   {chapter.lectures.length - visibleLimit} More Lessons
                                 </button>

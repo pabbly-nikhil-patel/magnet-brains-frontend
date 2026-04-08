@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { authApi } from '../../api/auth';
 import { useAuthStore } from '../../stores/authStore';
 import DashboardLayout from '../../components/shared/DashboardLayout';
+import PasswordInput from '../../components/shared/PasswordInput';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
@@ -79,11 +80,11 @@ export default function ProfilePage() {
           <form onSubmit={handlePassword} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Current Password</label>
-              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="input-field" required />
+              <PasswordInput value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input-field" required minLength={6} />
+              <PasswordInput value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} />
             </div>
             <button type="submit" disabled={pwLoading} className="btn-primary">
               {pwLoading ? 'Changing...' : 'Change Password'}

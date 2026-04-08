@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export PATH=\"/c/Program Files/PostgreSQL/16/bin:$PATH\")",
+      "Bash(PGPASSWORD=\"npg_2JwLemz9TGth\" psql -h ep-square-brook-amf5lf2p.c-5.us-east-1.aws.neon.tech -U neondb_owner -d neondb -c \"SELECT title, status FROM courses; SELECT count\\(*\\) as users FROM users; SELECT count\\(*\\) as lectures FROM lectures;\")"
+    ]
+  }
+}

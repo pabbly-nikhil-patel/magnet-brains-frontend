@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authApi } from '../../api/auth';
 import { useAuthStore } from '../../stores/authStore';
+import PasswordInput from '../../components/shared/PasswordInput';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -46,8 +47,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              className="input-field" required minLength={6} />
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">I am a</label>
