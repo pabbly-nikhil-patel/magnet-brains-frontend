@@ -37,9 +37,12 @@ async fn main() {
     let db = db::pool::create_pool(&config.database_url, config.database_max_connections).await;
     tracing::info!("Database pool created");
 
-    // Redis
+    // Redis (optional — app works without it, rate limiting just won't apply)
     let redis = redis::Client::open(config.redis_url.as_str())
-        .expect("Failed to create Redis client");
+        .unwrap_or_else(|e| {
+            tracing::warn!("Redis not available: {}. Rate limiting disabled.", e);
+            redis::Client::open("redis://localhost:6379").unwrap()
+        });
     tracing::info!("Redis client created");
 
     // JWT Manager
